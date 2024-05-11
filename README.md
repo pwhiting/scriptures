@@ -34,13 +34,7 @@ Note that this will create the Chroma database in whatever directory you issue t
 
 ## Using Pre-embedded Scriptures
 
-If you want to skip the embedding steps/cost, just download this file:
-
-```bash
-wget http://dugg.in/s.zip
-```
-
-and unzip it:
+If you want to skip the embedding steps/cost, just download http://dugg.in/s.zip and unzip it:
 
 ```bash
 unzip s.zip
@@ -53,12 +47,13 @@ The file is approximately 450 MB, so please be patient.
 To run any of the searches, make sure you are in the same directory as the `scriptures_db` directory, and just type:
 
 ```bash
-./search "am I a child of God"
+./search am I a child of God
 ```
 
-It will combine all the words on the command line into the query.
+It will combine all the words on the command line into the query. No quotes are neeed. Pay attention to not using special 
+shell characters.
 
-If you want to use punctuation, put it in quotes:
+If you want to use special characters, like ?, put it in quotes:
 
 ```bash
 ./search "am I a child of God?"
