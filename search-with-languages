@@ -1,0 +1,52 @@
+#!/opt/homebrew/bin/python3
+import sys,os,json
+import numpy as np
+import chromadb
+from langchain_community.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
+from openai import OpenAI
+
+if len(sys.argv) > 1:
+  query = " ".join(sys.argv[1:])
+else:
+  query = sys.stdin.read()
+
+client = OpenAI()
+
+def translate(text,lang):
+ try:
+  answer = client.chat.completions.create(
+    messages=[{
+         "role": "user",
+         "content": f"Translate the following English text to {lang}: {text}",
+    }],
+    model="gpt-3.5-turbo",
+  )
+  return answer.choices[0].message.content
+ except Exception as e:
+  print(f"An error occurred: {e}")
+  return None
+
+def embed(text):
+ response = client.embeddings.create(
+    input=text,
+    model="text-embedding-ada-002"
+ )
+ return response.data[0].embedding
+
+def lang_vec(q): 
+ squery=translate(q,"spanish")
+ mquery=translate(q,"mandarin")
+ embeds=[embed(query),embed(squery),embed(mquery)]
+ return np.mean(embeds,axis=0).tolist()
+
+db = Chroma(embedding_function=OpenAIEmbeddings(),persist_directory="scriptures_db")
+for doc,score in db.similarity_search_by_vector_with_relevance_scores(lang_vec(query),k=10):
+  print(json.dumps({
+    'score':score,
+    'content':doc.page_content,
+    'meta':doc.metadata
+    },
+    indent=2,
+    ensure_ascii=False))
+

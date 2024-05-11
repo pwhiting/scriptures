@@ -1,0 +1,94 @@
+#!/opt/homebrew/bin/python3
+import sys,os,json
+import chromadb
+from langchain_community.vectorstores import Chroma
+from langchain_openai import OpenAIEmbeddings
+from openai import OpenAI
+import numpy as np
+
+import pandas as pd
+from openpyxl import load_workbook
+
+if len(sys.argv) > 1:
+  query = " ".join(sys.argv[1:])
+else:
+  query = sys.stdin.read()
+
+def simplify(obj):
+ rval = []
+ for line in obj:
+  rval.append(line.metadata["reference"] + " " + line.page_content)
+ return rval 
+
+def translate(text,lang):
+ try:
+  answer = client.chat.completions.create(
+    messages=[
+        {
+            "role": "user",
+            "content": f"Translate the following English text to {lang}: {text}",
+        }
+    ],
+    model="gpt-3.5-turbo",
+  )
+  return answer.choices[0].message.content
+ except Exception as e:
+  print(f"An error occurred: {e}")
+  return None
+
+def embed(text):
+ response = client.embeddings.create(
+    input=text,
+    model="text-embedding-ada-002"
+ )
+ return response.data[0].embedding
+
+
+def langvec(q):
+ squery=translate(q,"spanish")
+ mquery=translate(q,"mandarin")
+ embeds=[embed(q),embed(squery),embed(mquery)]
+ return np.mean(embeds,axis=0).tolist() , " ".join([q,squery,mquery])
+
+
+def get_ai_query(text):
+ try:
+  answer = client.chat.completions.create(
+    messages=[
+        {
+            "role": "user",
+            "content": f"you are tasked with taking the following text and returning a phrase that will be used as the query parameter in a vector search against a vector database that contains vectors of all of the LDS standard works. The vectors are of single verses. a good result will look like scripture words in the right order, not like an answer to the question. these scripture words should be words that are in the right scriptures that match the question. Here is the text: {text}",
+        }
+    ],
+    model="gpt-4-turbo",
+  )
+  return answer.choices[0].message.content
+ except Exception as e:
+  print(f"An error occurred: {e}")
+  return None
+
+
+db = Chroma(embedding_function=OpenAIEmbeddings(),persist_directory="scriptures_db")
+
+result = db.similarity_search(query,k=10)
+mmr = db.max_marginal_relevance_search(query,k=10)
+
+aiquery = get_ai_query(query)
+ai = db.similarity_search(aiquery,k=10)
+
+lvec, lquery = langvec(query)
+lang=db.similarity_search_by_vector(lvec,k=10)
+
+df = pd.DataFrame({
+        'approach': ['query'] + [i for i in range(1, 11)],
+        'standard': [query] + simplify(result),
+        'mmr': [query] + simplify(mmr),
+        'ai': [aiquery] + simplify(ai),
+        'lang': [lquery] + simplify(lang),
+    })
+
+writer = pd.ExcelWriter('output.xlsx', engine='openpyxl')
+df.to_excel(writer, index=False)
+writer._save()
+
+
