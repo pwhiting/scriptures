@@ -1,44 +1,79 @@
-This repo contains scripts to embed scriptures and search them
+# Scripture Embedding and Search Repository
 
-ensure you've exported your OPEN_API_KEY env variable prior to running
+This repository contains scripts to embed scriptures and search them.
 
-If you want to do your own embeddings clone https://github.com/bcbooks/scriptures-json and for each
-book you want to embed type:
-./embed [book.json]
+## Prerequisites
 
-For the Doctrine and Covenants just type
+Ensure you've exported your `OPEN_API_KEY` environment variable prior to running:
+
+```bash
+export OPEN_API_KEY=your_api_key_here
+```
+
+## Embedding Scriptures
+
+If you want to do your own embeddings, clone the following repository:
+
+```bash
+git clone https://github.com/bcbooks/scriptures-json
+```
+
+For each book you want to embed, type:
+
+```bash
+./embed book.json
+```
+
+For the Doctrine and Covenants, which has a unique structure, just type:
+
+```bash
 ./embed-dandc
-(it has a unique structure.)
+```
 
-Note that it will create the cromadb in whatever directory you issue the command in.
-The Choroma db will be named scriptures_db. 
+Note that this will create the Chroma database in whatever directory you issue the command in. The Chroma database will be named `scriptures_db`.
 
-If you want to skip the embedding steps/cost just download this file:
-http://dugg.in/s.zip 
-and  unzip it.
+## Using Pre-embedded Scriptures
 
-It is 450M. Be patient.
+If you want to skip the embedding steps/cost, just download this file:
 
-To run any of the searches make sure you are in the same directory as the scriptures_db directory, and just
-type:
+```bash
+wget http://dugg.in/s.zip
+```
 
-./search am I a child of God
+and unzip it:
+
+```bash
+unzip s.zip
+```
+
+The file is approximately 450 MB, so please be patient.
+
+## Running Searches
+
+To run any of the searches, make sure you are in the same directory as the `scriptures_db` directory, and just type:
+
+```bash
+./search "am I a child of God"
+```
 
 It will combine all the words on the command line into the query.
 
-If you want to use punctuation put it in quotes
+If you want to use punctuation, put it in quotes:
 
+```bash
 ./search "am I a child of God?"
+```
 
-or you can just type ./search and enter the terms on stdin followed by ctrl-D
+Alternatively, you can just type `./search` and enter the terms on stdin followed by `CTRL-D`.
 
-combine does all the different methods and overwrites output.xslx with the results for comparison.
+## Combine Search Methods
 
-The search methods supported are:
-search - normal similarity search
-search-mmr - max marginal relevance search, should have more diverse matches
-search-ai - uses AI to refiine your search terms
-search-language - embeds in English, Spanish, and Mandrin and uses the average embedding to search
+The `combine` command does all the different methods and overwrites `output.xlsx` with the results for comparison.
 
+### Supported Search Methods
 
+- `search` - normal similarity search
+- `search-mmr` - max marginal relevance search, should have more diverse matches
+- `search-ai` - uses AI to refine your search terms
+- `search-language` - embeds in English, Spanish, and Mandarin and uses the average embedding to search
 
