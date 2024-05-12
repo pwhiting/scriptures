@@ -81,10 +81,10 @@ key is exported to PINECONE_API_KEY:
 export PINECONE_API_KEY=your_pinecone_api_key_here
 ```
 
-If you are creating the embeddings, create the index first. You can do it on the command line, in python, or in 
+If you are creating the embeddings, create the index first. You can do it in python or in 
 the console. Name it scriptures and set the dimension to 1536.
 
-After it has been created (or if you have an API key to one that someone else has created) you can simply issue
+After it has been created and populated (or if you have an API key to one that someone else has created) you can simply issue
 all of the above search commands with a p prepended:
 
 ### Supported Search Methods

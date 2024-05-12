@@ -9,6 +9,9 @@ else:
   query = sys.stdin.read()
 
 pinecone_api_key = os.getenv("PINECONE_API_KEY")
+if 'OPENAI_API_KEY' not in os.environ and 'OPEN_AI_KEY' in os.environ:
+ os.environ['OPENAI_API_KEY'] = os.environ['OPEN_AI_KEY']
+
 vectorstore = PineconeVectorStore(index_name='scriptures', embedding=OpenAIEmbeddings())
 print(f"query is: {query}")
 
