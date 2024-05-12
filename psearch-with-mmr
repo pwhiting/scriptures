@@ -1,0 +1,22 @@
+#!/opt/homebrew/bin/python3
+import sys,os,json
+from langchain_pinecone import PineconeVectorStore
+from langchain_openai import OpenAIEmbeddings
+
+if len(sys.argv) > 1:
+  query = " ".join(sys.argv[1:])
+else:
+  query = sys.stdin.read()
+
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+vectorstore = PineconeVectorStore(index_name='scriptures', embedding=OpenAIEmbeddings())
+print(f"query is: {query}")
+
+for doc in vectorstore.max_marginal_relevance_search(query,k=10):
+  print(json.dumps({
+    'content':doc.page_content,
+    'meta':doc.metadata
+    },
+    indent=2,
+    ensure_ascii=False))
+

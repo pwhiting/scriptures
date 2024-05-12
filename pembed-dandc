@@ -1,0 +1,40 @@
+#!/usr/local/bin/python3
+import sys
+import os 
+import json
+from langchain_openai import OpenAIEmbeddings
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.schema import Document
+from langchain_pinecone import PineconeVectorStore
+
+def load_json_file(file_path):
+    with open(file_path, 'r') as file:
+        return json.load(file)
+
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+openai_api_key = os.environ.get('OPEN_AI_KEY')
+vectorstore = PineconeVectorStore(index_name='scriptures', embedding=OpenAIEmbeddings())
+
+def embed(json_file_path):
+ data = load_json_file(json_file_path)
+ documents = []
+ for section in data["sections"]:
+  for verse in section["verses"]:
+   documents.append(Document(
+   page_content = verse["text"],
+   metadata = {
+     "title": data["title"],
+     "section": section["section"],
+     "verse": verse["verse"],
+     "reference": verse["reference"]
+   }
+  ))
+
+ batch_size = 5000 
+ batches = [documents[i:i+batch_size] for i in range(0, len(documents), batch_size)]
+ for batch in batches:
+  vectorstore.add_documents(batch)
+
+if __name__ == "__main__":
+ embed('doctrine-and-covenants.json')
+

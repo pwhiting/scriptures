@@ -72,3 +72,27 @@ The `combine` command does all the different methods and overwrites `output.xlsx
 - `search-ai` - uses AI to refine your search terms
 - `search-language` - embeds in English, Spanish, and Mandarin and uses the average embedding to search
 
+
+# Pinecone DB
+All of the above commands also work against a pinecone database. To make this work ensure your Pinecone API 
+key is exported to PINECONE_API_KEY:
+
+```bash
+export PINECONE_API_KEY=your_pinecone_api_key_here
+```
+
+If you are creating the embeddings, create the index first. You can do it on the command line, in python, or in 
+the console. Name it scriptures and set the dimension to 1536.
+
+After it has been created (or if you have an API key to one that someone else has created) you can simply issue
+all of the above search commands with a p prepended:
+
+### Supported Search Methods
+
+- `psearch` - normal similarity search
+- `psearch-mmr` - max marginal relevance search, should have more diverse matches
+- `psearch-ai` - uses AI to refine your search terms
+- `psearch-language` - embeds in English, Spanish, and Mandarin and uses the average embedding to search
+
+This version should be much faster and can be horizontally scaled.
+

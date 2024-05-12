@@ -1,0 +1,47 @@
+#!/opt/homebrew/bin/python3
+import sys,os,json
+import numpy as np
+from langchain_pinecone import PineconeVectorStore
+from langchain_openai import OpenAIEmbeddings
+from openai import OpenAI
+
+
+if len(sys.argv) > 1:
+  query = " ".join(sys.argv[1:])
+else:
+  query = sys.stdin.read()
+
+client = OpenAI()
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+vectorstore = PineconeVectorStore(index_name='scriptures', embedding=OpenAIEmbeddings())
+print(f"query is: {query}")
+
+def get_ai_query(text):
+ try:
+  answer = client.chat.completions.create(
+    messages=[
+        {
+            "role": "user",
+            "content": f"you are tasked with taking the following text and returning a phrase that will be used as the query parameter in a vector search against a vector database that contains vectors of all of the LDS standard works. The vectors are of single verses. a good result will look like scripture words in the right order, not like an answer to the question. these scripture words should be words that are in the right scriptures that match the question. Here is the text: {text}",
+        }
+    ],
+    model="gpt-4-turbo",
+  )
+  return answer.choices[0].message.content
+ except Exception as e:
+  print(f"An error occurred: {e}")
+  return None
+
+aiquery = get_ai_query(query)
+print(f"using this for the similarity search: {aiquery}")
+for doc,score in vectorstore.similarity_search_with_relevance_scores(query,k=10):
+  print(json.dumps({
+    'score':score,
+    'content':doc.page_content,
+    'meta':doc.metadata
+    },
+    indent=2,
+    ensure_ascii=False))
+
+
+
