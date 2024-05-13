@@ -68,9 +68,9 @@ The `combine` command does all the different methods and overwrites `output.xlsx
 ### Supported Search Methods
 
 - `search` - normal similarity search
-- `search-mmr` - max marginal relevance search, should have more diverse matches
-- `search-ai` - uses AI to refine your search terms
-- `search-language` - embeds in English, Spanish, and Mandarin and uses the average embedding to search
+- `search-with-mmr` - max marginal relevance search, should have more diverse matches
+- `search-with-ai` - uses AI to refine your search terms
+- `search-with-languages` - embeds in English, Spanish, and Mandarin and uses the average embedding to search
 
 
 # Pinecone DB
@@ -90,9 +90,9 @@ all of the above search commands with a p prepended:
 ### Supported Search Methods
 
 - `psearch` - normal similarity search
-- `psearch-mmr` - max marginal relevance search, should have more diverse matches
-- `psearch-ai` - uses AI to refine your search terms
-- `psearch-language` - embeds in English, Spanish, and Mandarin and uses the average embedding to search
+- `psearch--with-mmr` - max marginal relevance search, should have more diverse matches
+- `psearch-with-ai` - uses AI to refine your search terms
+- `psearch-with-language` - embeds in English, Spanish, and Mandarin and uses the average embedding to search
 
 This version should be much faster and can be horizontally scaled.
 
