@@ -40,7 +40,7 @@ If you want to skip the embedding steps/cost, just download http://dugg.in/s.zip
 unzip s.zip
 ```
 
-The file is approximately 450 MB, so please be patient.
+The file is approximately 450 MB.
 
 ## Running Searches
 
