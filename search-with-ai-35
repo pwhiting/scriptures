@@ -5,7 +5,8 @@ import chromadb
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
-
+from common import wrap, bold, get_query, heading
+query = get_query()
 
 if len(sys.argv) > 1:
   query = " ".join(sys.argv[1:])
@@ -20,7 +21,24 @@ def get_ai_query(text):
     messages=[
         {
             "role": "user",
-            "content": f"you are tasked with taking the following text and returning a phrase that will be used as the query parameter in a vector search against a vector database that contains vectors of all of the LDS standard works. The vectors are of single verses. a good result will look like scripture words in the right order, not like an answer to the question. these scripture words should be words that are in the right scriptures that match the question. Here is the text: {text}",
+            "content": f"""
+If the following text doesn't look like a question, replace words to match a likely LDS scripture. 
+
+For example, if the text is "adam sinned so we could be happy" 
+respond with "adam fell that men might be men are that they might have joy."  
+
+If the text looks like a question try to answer the question with the text of multiple LDS scriptures. 
+
+For example,if the question is: "what are some scriptures that celbrate the glory of motherhood"
+
+answer with
+
+strength and honour are her clothing; and she shall rejoice in time to come.
+because she was the mother of all living;
+thou art an elect lady, whom I have called
+they had been taught by their mothers, that if they did not doubt, God would deliver them.
+
+Here is the text: {text}""",
         }
     ],
     model="gpt-3.5-turbo",
@@ -31,9 +49,10 @@ def get_ai_query(text):
   return None
 
 aiquery = get_ai_query(query)
-print(f"using this for the similarity search: {aiquery}")
+heading(aiquery)
+
 db = Chroma(embedding_function=OpenAIEmbeddings(),persist_directory="scriptures_db")
-for doc,score in db.similarity_search_with_relevance_scores(query,k=10):
+for doc,score in db.similarity_search_with_relevance_scores(aiquery,k=10):
   print(json.dumps({
     'score':score,
     'content':doc.page_content,

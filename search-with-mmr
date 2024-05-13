@@ -1,15 +1,10 @@
 #!/opt/homebrew/bin/python3
-import sys,os,json
+import os,json
 import chromadb
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
-
-if len(sys.argv) > 1:
-  query = " ".join(sys.argv[1:])
-else:
-  query = sys.stdin.read()
-
-print(f"query is: {query}")
+from common import wrap, bold, get_query, heading
+query = get_query()
 
 db = Chroma(embedding_function=OpenAIEmbeddings(),persist_directory="scriptures_db")
 for doc in db.max_marginal_relevance_search(query,k=10):

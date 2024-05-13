@@ -5,8 +5,8 @@ from langchain_pinecone import PineconeVectorStore
 from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
 from common import wrap, bold, get_query, heading
-
 query = get_query()
+
 pinecone_api_key = os.getenv("PINECONE_API_KEY")
 if 'OPENAI_API_KEY' not in os.environ and 'OPEN_AI_KEY' in os.environ:
  os.environ['OPENAI_API_KEY'] = os.environ['OPEN_AI_KEY']
@@ -51,7 +51,7 @@ Here is the text: {text}""",
 aiquery = get_ai_query(query)
 heading(aiquery)
 
-for doc,score in vectorstore.similarity_search_with_relevance_scores(aiquery,k=10):
+for doc in vectorstore.similarity_search(aiquery,k=10):
  wrap(f"""{bold(doc.metadata["reference"])} {doc.page_content}\n""")
 
 print("")

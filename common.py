@@ -18,7 +18,7 @@ def wrap(text, width=get_console_width()):
  print("")
 
 def line():
- print("—" * get_console_width())
+ print("—" * get_console_width() + "\n")
 
 def get_query():
  query = " ".join(sys.argv[1:]) if (len(sys.argv) > 1) else sys.stdin.read()
@@ -31,5 +31,5 @@ def bold(str):
 def heading(str):
  clear()
  line()
- print(str)
+ wrap(str)
  line()

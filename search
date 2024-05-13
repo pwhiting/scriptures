@@ -3,15 +3,13 @@ import sys,os,json
 import chromadb
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
-
-if len(sys.argv) > 1:
-  query = " ".join(sys.argv[1:])
-else:
-  query = sys.stdin.read()
-
-print(f"query is: {query}")
+from common import get_query
+query = get_query()
+if 'OPENAI_API_KEY' not in os.environ and 'OPEN_AI_KEY' in os.environ:
+ os.environ['OPENAI_API_KEY'] = os.environ['OPEN_AI_KEY']
 
 db = Chroma(embedding_function=OpenAIEmbeddings(),persist_directory="scriptures_db")
+
 for doc,score in db.similarity_search_with_relevance_scores(query,k=10):
   print(json.dumps({
     'score': score,

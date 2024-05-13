@@ -5,11 +5,11 @@ import chromadb
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
+from common import wrap, bold, get_query, heading
+query = get_query()
 
-if len(sys.argv) > 1:
-  query = " ".join(sys.argv[1:])
-else:
-  query = sys.stdin.read()
+if 'OPENAI_API_KEY' not in os.environ and 'OPEN_AI_KEY' in os.environ:
+ os.environ['OPENAI_API_KEY'] = os.environ['OPEN_AI_KEY']
 
 client = OpenAI()
 
@@ -37,7 +37,8 @@ def embed(text):
 def lang_vec(q): 
  squery=translate(q,"spanish")
  mquery=translate(q,"mandarin")
- embeds=[embed(query),embed(squery),embed(mquery)]
+ heading("\n".join([q,squery,mquery]))
+ embeds=[embed(q),embed(squery),embed(mquery)]
  return np.mean(embeds,axis=0).tolist()
 
 db = Chroma(embedding_function=OpenAIEmbeddings(),persist_directory="scriptures_db")
