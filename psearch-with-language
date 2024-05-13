@@ -46,11 +46,9 @@ def lang_vec(q):
  embeds=[embed(query),embed(squery),embed(mquery)]
  return np.mean(embeds,axis=0).tolist()
 
+def bold(str):
+ return f"\033[1m{str}\033[0m"
 results = index.query(vector=lang_vec(query),top_k=10, include_metadata=True)
 for result in results['matches']:
-  print(json.dumps({
-     'score': result['score'],
-     'meta':result['metadata']
-    },
-    indent=2,
-    ensure_ascii=False))
+ meta=result['metadata'] 
+ print(f"""{bold(meta['reference'])} {meta['text']}\n""")

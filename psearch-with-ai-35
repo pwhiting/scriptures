@@ -47,7 +47,7 @@ they had been taught by their mothers, that if they did not doubt, God would del
 Here is the text: {text}""",
         }
     ],
-    model="gpt-4-turbo",
+    model="gpt-3.5-turbo",
   )
   return answer.choices[0].message.content
  except Exception as e:
