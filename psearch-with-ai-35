@@ -4,13 +4,9 @@ import numpy as np
 from langchain_pinecone import PineconeVectorStore
 from langchain_openai import OpenAIEmbeddings
 from openai import OpenAI
+from common import wrap, bold, get_query, heading
 
-
-if len(sys.argv) > 1:
-  query = " ".join(sys.argv[1:])
-else:
-  query = sys.stdin.read()
-
+query = get_query()
 pinecone_api_key = os.getenv("PINECONE_API_KEY")
 if 'OPENAI_API_KEY' not in os.environ and 'OPEN_AI_KEY' in os.environ:
  os.environ['OPENAI_API_KEY'] = os.environ['OPEN_AI_KEY']
@@ -18,8 +14,6 @@ if 'OPENAI_API_KEY' not in os.environ and 'OPEN_AI_KEY' in os.environ:
 client = OpenAI()
 
 vectorstore = PineconeVectorStore(index_name='scriptures', embedding=OpenAIEmbeddings())
-#print(f"query is: {query}")
-print("\n")
 
 def get_ai_query(text):
  try:
@@ -55,9 +49,9 @@ Here is the text: {text}""",
   return None
 
 aiquery = get_ai_query(query)
-#print(f"\nSearching for: {aiquery}\n\n\n")
-def bold(str):
- return f"\033[1m{str}\033[0m"
-for doc,score in vectorstore.similarity_search_with_relevance_scores(aiquery,k=10):
- print(f"""{bold(doc.metadata["reference"])} {doc.page_content}\n""")
+heading(aiquery)
 
+for doc,score in vectorstore.similarity_search_with_relevance_scores(aiquery,k=10):
+ wrap(f"""{bold(doc.metadata["reference"])} {doc.page_content}\n""")
+
+print("")

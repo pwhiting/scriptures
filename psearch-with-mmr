@@ -2,21 +2,18 @@
 import sys,os,json
 from langchain_pinecone import PineconeVectorStore
 from langchain_openai import OpenAIEmbeddings
-
-if len(sys.argv) > 1:
-  query = " ".join(sys.argv[1:])
-else:
-  query = sys.stdin.read()
+from common import wrap, bold, get_query, heading 
+query = get_query()
 
 pinecone_api_key = os.getenv("PINECONE_API_KEY")
 if 'OPENAI_API_KEY' not in os.environ and 'OPEN_AI_KEY' in os.environ:
  os.environ['OPENAI_API_KEY'] = os.environ['OPEN_AI_KEY']
 
+heading(query)
+
 vectorstore = PineconeVectorStore(index_name='scriptures', embedding=OpenAIEmbeddings())
 
-def bold(str):
- return f"\033[1m{str}\033[0m"
-
 for doc in vectorstore.max_marginal_relevance_search(query,k=10):
- print(f"""{bold(doc.metadata["reference"])} {doc.page_content}\n""")
+ wrap(f"""{bold(doc.metadata["reference"])} {doc.page_content}\n""")
 
+print("\n")
