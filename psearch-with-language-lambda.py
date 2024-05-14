@@ -7,8 +7,6 @@ from openai import OpenAI
 from pinecone import Pinecone
 
 def lambda_handler(event, context):
-  
-  print(event)
   body = json.loads(event['body'])
     
   # Extract the 'query' value
@@ -49,11 +47,13 @@ def lambda_handler(event, context):
   results = index.query(vector=lang_vec(query), top_k=10, include_metadata=True)
   response = []
   for result in results['matches']:
-    print(result)
     response.append({
       'score': result['score'],
       'meta': result['metadata']
     })
+    
+  print(query)
+  print(json.dumps(response))
 
   return {
     'statusCode': 200,
