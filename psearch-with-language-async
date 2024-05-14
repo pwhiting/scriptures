@@ -1,0 +1,67 @@
+#!/opt/homebrew/bin/python3
+import os
+import numpy as np
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from langchain_openai import OpenAIEmbeddings
+from openai import OpenAI
+from pinecone import Pinecone
+from common import wrap, bold, get_query, heading
+
+query = get_query()
+
+api_key = os.getenv("PINECONE_API_KEY")
+if 'OPENAI_API_KEY' not in os.environ and 'OPEN_AI_KEY' in os.environ:
+ os.environ['OPENAI_API_KEY'] = os.environ['OPEN_AI_KEY']
+
+client = OpenAI()
+pc = Pinecone(api_key=api_key)
+index = pc.Index("scriptures")
+
+def translate_sync(text, lang):
+ try:
+  answer = client.chat.completions.create(
+    messages=[{
+         "role": "user",
+         "content": f"Translate the following English text to {lang}: {text}",
+    }],
+    model="gpt-3.5-turbo",
+  )
+  return answer.choices[0].message.content
+ except Exception as e:
+  print(f"An error occurred: {e}")
+  return None
+
+async def translate(text, lang):
+ loop = asyncio.get_event_loop()
+ with ThreadPoolExecutor() as pool:
+  result = await loop.run_in_executor(pool, translate_sync, text, lang)
+  return result
+
+def embed(text):
+ response = client.embeddings.create(
+    input=text,
+    model="text-embedding-ada-002"
+ )
+ return response.data[0].embedding
+
+async def lang_vec(q):
+ translations = [q] + list(await asyncio.gather(
+  translate(q, "spanish"),
+  translate(q, "mandarin"),
+  translate(q, "korean"),
+  translate(q, "hebrew")
+ ))
+ heading(" -- ".join(translations))
+ embeds = [embed(text) for text in translations]
+ return np.mean(embeds, axis=0).tolist()
+
+async def main():
+ docs = index.query(vector=await lang_vec(query), top_k=10, include_metadata=True)
+ for doc in docs['matches']:
+  wrap(f"{bold(doc['metadata']['reference'])} {doc['metadata']['text']}\n")
+ print("\n")
+
+if __name__ == "__main__":
+ asyncio.run(main())
+
