@@ -1,0 +1,17 @@
+#!/opt/homebrew/bin/python3
+import os,json
+from langchain_pinecone import PineconeVectorStore
+from langchain_openai import OpenAIEmbeddings
+from common import wrap, bold, get_query, heading 
+
+query = get_query()
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+openai_api_key = os.getenv("OPEN_AI_KEY")
+
+vectorstore = PineconeVectorStore(namespace='reference.1.1',index_name='scriptures', embedding=OpenAIEmbeddings(openai_api_key=openai_api_key))
+
+match=[]
+for doc,score in vectorstore.similarity_search_with_relevance_scores(query,k=7): 
+ match.append({'score':score,'metadata':doc.metadata,'text':doc.page_content})
+
+print(json.dumps(match,indent=1))
