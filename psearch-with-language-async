@@ -49,8 +49,8 @@ async def lang_vec(q):
  translations = [q] + list(await asyncio.gather(
   translate(q, "spanish"),
   translate(q, "mandarin"),
-  translate(q, "korean"),
-  translate(q, "hebrew")
+#  translate(q, "korean"),
+#  translate(q, "hebrew")
  ))
  heading(" -- ".join(translations))
  embeds = [embed(text) for text in translations]

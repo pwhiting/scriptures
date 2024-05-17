@@ -9,9 +9,10 @@ pinecone_api_key = os.getenv("PINECONE_API_KEY")
 if 'OPENAI_API_KEY' not in os.environ and 'OPEN_AI_KEY' in os.environ:
  os.environ['OPENAI_API_KEY'] = os.environ['OPEN_AI_KEY']
 
-vectorstore = PineconeVectorStore(index_name='test', embedding=OpenAIEmbeddings())
+vectorstore = PineconeVectorStore(namespace='Context-3',index_name='test', embedding=OpenAIEmbeddings())
 
 for doc,score in vectorstore.similarity_search_with_relevance_scores(query,k=7):
+# print(doc)
  wrap(f"""{bold(doc.metadata["reference"])} {doc.page_content}\n\n\n""")
 
 print("\n")

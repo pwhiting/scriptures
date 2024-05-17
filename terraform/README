@@ -1,0 +1,31 @@
+terraform init
+terraform apply 
+terraform output api_url
+terraform output api_key
+aws secretsmanager update-secret --secret-id search-api-secret --secret-string "{\"pinecone_api_key\": \"$PINECONE_API_KEY\", \"openai_api_key\": \"$OPEN_AI_KEY\"}"
+
+curl -X POST \
+-H "Content-Type: application/json" \
+-H "x-api-key: kxeyrJUGsT15oCtMO3eRr94OAkMQ2K8n7gvi1bT8" \
+-d '
+{
+  "query": "am i a child of god",
+  "k": 10,
+  "namespace": "reference.1.1",
+  "filter": {"book_uri": {"$nin": ["/scriptures/nt","/scriptures/ot"]} }
+}
+' \
+https://ovryquvu3b.execute-api.us-east-1.amazonaws.com/prod/search
+
+
+
+stuff below isn't needed anymore, but useful learning
+
+
+mkdir layer
+cd layer
+pip3 install --platform manylinux2014_x86_64 --target=python --implementation cp --python-version 3.12 --only-binary=:all: --upgrade pinecone-client
+aws lambda publish-layer-version --layer-name pinecone-openai --zip-file fileb://layer/pc.zip --compatible-runtimes  python3.12 
+aws lambda update-function-configuration --function-name search_function --layers arn:aws:lambda:us-east-1:534284445277:layer:pinecone-openai:1
+
+
