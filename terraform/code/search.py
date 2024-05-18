@@ -27,7 +27,7 @@ def embed(text):
         client = OpenAI(api_key=openai_api_key)
         response = client.embeddings.create(
             input=text,
-            model="text-embedding-ada-002"
+            model="text-embedding-3-large"
         )
         return response.data[0].embedding
     except Exception as e:
@@ -55,9 +55,10 @@ def lambda_handler(event, context):
             }
 
         k = body.get('k', 10)  # Default value for k
-        index_name = 'scriptures'  # Don't allow caller to change this
+        index_name = 'content'  # Don't allow caller to change this
         
-        namespace = body.get('namespace', 'reference.1.1')  # Default value for namespace
+        #namespace = body.get('namespace', 'reference.1.1')  # Default value for namespace
+        namespace = "Scriptures-1.1"
         kwargs = {'namespace':namespace,'include_metadata':True}
     
         filter = body.get('filter',None)

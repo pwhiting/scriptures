@@ -43,10 +43,9 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "null_resource" "create_layer_zip" {
+resource "null_resource" "create_layer_zip2" {
   provisioner "local-exec" {
     command = <<EOT
-      if [ ! -f python ]; then
         mkdir -p layer/python
         pip3 install --platform manylinux2014_x86_64 \
            --target=layer/python \
@@ -54,10 +53,33 @@ resource "null_resource" "create_layer_zip" {
            --python-version 3.12 \
            --only-binary=:all: \
            --upgrade openai pinecone-client 
-      fi
     EOT
   }
 }
+
+
+resource "null_resource" "create_layer_zip" {
+  provisioner "local-exec" {
+    command = <<EOT
+      echo "Starting layer creation..."
+      if [ ! -f layer/python ]; then
+        mkdir -p layer/python
+        echo "Installing packages..."
+        pip3 install --platform manylinux2014_x86_64 \
+           --target=layer/python \
+           --implementation cp \
+           --python-version 3.12 \
+           --only-binary=:all: \
+           --upgrade openai pinecone-client
+        echo "Packages installed."
+      else
+        echo "Layer already exists."
+      fi
+      echo "Layer creation complete."
+    EOT
+  }
+}
+
 
 data "archive_file" "layer" {
   type        = "zip"

@@ -17,6 +17,12 @@ pinecone_api_key = os.getenv("PINECONE_API_KEY")
 if 'OPENAI_API_KEY' not in os.environ and 'OPEN_AI_KEY' in os.environ:
  os.environ['OPENAI_API_KEY'] = os.environ['OPEN_AI_KEY']
 
+def clean_verse(soup):
+    for sup in soup.find_all('sup'):
+        sup.decompose()
+    for verse_number in soup.find_all(class_='verse-number'):
+        verse_number.decompose()
+    return soup.get_text()
 
 def addChapter(title,row):
     soup = BeautifulSoup(row['content_html'],'html.parser')
@@ -24,7 +30,7 @@ def addChapter(title,row):
     for text in texts:
         verse_number_span = text.find('span', class_='verse-number')
         if(verse_number_span):
-            rest_of_text = ''.join([content.get_text() if hasattr(content, 'get_text') else str(content) for content in text.contents if content != verse_number_span])
+            rest_of_text = clean_verse(text) 
             documents.append(Document(
                 page_content = rest_of_text,
                 metadata = {
@@ -35,6 +41,7 @@ def addChapter(title,row):
                 }
             ))
             print(rest_of_text)
+            print("")
     return
 
 def processDB(db_file):
@@ -46,10 +53,15 @@ def processDB(db_file):
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT s.uri, s.title, c.content_html FROM subitem s JOIN subitem_content c ON s.id = c.subitem_id")
+        cursor.execute("""SELECT s.uri, s.title, c.content_html 
+                            FROM subitem s 
+                            JOIN subitem_content c 
+                              ON s.id = c.subitem_id""")
         rows = cursor.fetchall()
         for row in rows:
             addChapter(title,row)
+
+
     except sqlite3.Error as e:
         print(f"An error occurred: {e}")
     finally:
@@ -57,9 +69,8 @@ def processDB(db_file):
 
 def embed(namespace):
     vectorstore = PineconeVectorStore(
-                    index_name='scriptures', 
-                    #index_name='test', 
-                    embedding=OpenAIEmbeddings(),
+                    index_name='content', 
+                    embedding=OpenAIEmbeddings(model='text-embedding-3-large'),
                     namespace = namespace
                    )
     batch_size = 5000 
@@ -71,5 +82,5 @@ def embed(namespace):
 documents = []
 if __name__ == "__main__":
  processDB(sys.argv[1])
- embed("reference.1.1")
+ embed("Scriptures-1.1")
 
