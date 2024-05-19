@@ -1,0 +1,82 @@
+#!/usr/local/bin/python3
+import sys
+import os
+import json
+from langchain_pinecone import PineconeVectorStore
+from langchain_openai import OpenAIEmbeddings
+from langchain.schema import Document
+import sqlite3
+import re
+from bs4 import BeautifulSoup
+
+def extract_book_uri(path):
+    match = re.match(r"^(/scriptures/[^\/]+)/.*$", path)
+    return match.group(1) if match else ""
+
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+if 'OPENAI_API_KEY' not in os.environ and 'OPEN_AI_KEY' in os.environ:
+ os.environ['OPENAI_API_KEY'] = os.environ['OPEN_AI_KEY']
+
+def clean_verse(soup):
+    for sup in soup.find_all('sup'):
+        sup.decompose()
+    return soup.get_text()
+
+def addChapter(title,row):
+    soup = BeautifulSoup(row['content_html'],'html.parser')
+    texts = soup.find_all(id=re.compile(r"p\d+")) 
+    chapter = ""
+    for text in texts:
+        chapter += clean_verse(text) + "\n"
+    documents.append(Document(
+        page_content = chapter,
+        metadata = {
+         'book': title,
+         'book_uri': extract_book_uri(row['uri']),
+         'uri': row['uri'],
+         'reference': row['title'].rstrip(':') }
+     ))
+
+    print(row['title'])
+    return
+
+def processDB(db_file):
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+    cursor.execute("SELECT value FROM metadata WHERE key='title'")
+    result = cursor.fetchone()
+    title = result[0] if result else None
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""SELECT s.uri, s.title, c.content_html 
+                            FROM subitem s 
+                            JOIN subitem_content c 
+                              ON s.id = c.subitem_id""")
+        rows = cursor.fetchall()
+        for row in rows:
+            addChapter(title,row)
+
+
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+    finally:
+        conn.close()
+
+def embed(namespace):
+    vectorstore = PineconeVectorStore(
+                    index_name='content', 
+                    embedding=OpenAIEmbeddings(model='text-embedding-3-large'),
+                    namespace = namespace
+                   )
+    batch_size = 5000 
+    batches = [documents[i:i+batch_size] for i in range(0, len(documents), batch_size)]
+    for batch in batches:
+        print("batch")
+        vectorstore.add_documents(batch)
+
+documents = []
+if __name__ == "__main__":
+ processDB(sys.argv[1])
+ embed("Chapters-1.0")
+

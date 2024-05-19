@@ -1,10 +1,13 @@
 import boto3
 import json
+import re
 from pinecone import Pinecone
 from openai import OpenAI
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger()
 
 secret = None
-
 
 def get_secrets():
     global secret
@@ -14,7 +17,7 @@ def get_secrets():
             response = client.get_secret_value(SecretId='search-api-secret')
             secret = json.loads(response['SecretString'])
         except Exception as e:
-            print(f"Error retrieving secret: {e}")
+            logger.error(f"Error retrieving secret: {e}")
             raise e
 
 def embed(text):
@@ -23,7 +26,7 @@ def embed(text):
         openai_api_key = secret.get('openai_api_key')
         if not openai_api_key:
             raise ValueError("OpenAI API key is missing from secrets")
-        
+
         client = OpenAI(api_key=openai_api_key)
         response = client.embeddings.create(
             input=text,
@@ -31,9 +34,13 @@ def embed(text):
         )
         return response.data[0].embedding
     except Exception as e:
-        print(f"Error generating embedding: {e}")
+        logger.error(f"Error generating embedding: {e}")
         raise e
 
+def get_namespace(user_text):
+    default_namespace = "Scriptures-1.1"
+    pattern = re.compile(r'^(Scriptures|Chapters|Verses)')
+    return user_text if pattern.match(user_text) else default_namespace
     
 def lambda_handler(event, context):
     try:
@@ -57,26 +64,26 @@ def lambda_handler(event, context):
         k = body.get('k', 10)  # Default value for k
         index_name = 'content'  # Don't allow caller to change this
         
-        #namespace = body.get('namespace', 'reference.1.1')  # Default value for namespace
-        namespace = "Scriptures-1.1"
-        kwargs = {'namespace':namespace,'include_metadata':True}
+        namespace = get_namespace(body.get('namespace', ''))
+
+        kwargs = {'namespace': namespace, 'include_metadata': True}
     
-        filter = body.get('filter',None)
+        filter = body.get('filter', None)
         if filter is not None:
             kwargs['filter'] = filter
 
-        print (kwargs)
+        logger.info(f"Query parameters: {kwargs}")
+       
         pc = Pinecone(api_key=pinecone_api_key)
         index = pc.Index(index_name)
 
         embedding = embed(query)
-        res = index.query(vector=embedding,top_k=k,**kwargs)
+        res = index.query(vector=embedding, top_k=k, **kwargs)
         
         result_data = {
-            'matches': [
-                {
-                    'score': match.score,
-                    'metadata': match.metadata
+            'matches': [{ 
+                  'score': match.score,
+                  'metadata': match.metadata
                 } for match in res.matches
             ]
         }
@@ -86,7 +93,7 @@ def lambda_handler(event, context):
             'body': json.dumps(result_data)
         }
     except Exception as e:
-        print(f"Error in lambda_handler: {e}")
+        logger.error(f"Error in lambda_handler: {e}")
         return {
             'statusCode': 500,
             'body': json.dumps({'error': str(e)})

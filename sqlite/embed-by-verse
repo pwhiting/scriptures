@@ -30,18 +30,19 @@ def addChapter(title,row):
     for text in texts:
         verse_number_span = text.find('span', class_='verse-number')
         if(verse_number_span):
-            rest_of_text = clean_verse(text) 
+            uri = row['uri'] + '.' + verse_number_span.get_text(strip=True)
+            ref = row['title'] + ':' + verse_number_span.get_text(strip=True)
+            rest_of_text = clean_verse(text)
+            print(ref)
             documents.append(Document(
                 page_content = rest_of_text,
                 metadata = {
                     'book': title,
                     'book_uri': extract_book_uri(row['uri']),
-                    'uri': row['uri'] + '.' + verse_number_span.get_text(strip=True),
-                    'reference': row['title'] + ':' + verse_number_span.get_text(strip=True),
+                    'uri': uri,
+                    'reference': ref
                 }
             ))
-            print(rest_of_text)
-            print("")
     return
 
 def processDB(db_file):
@@ -82,5 +83,5 @@ def embed(namespace):
 documents = []
 if __name__ == "__main__":
  processDB(sys.argv[1])
- embed("Scriptures-1.1")
+ embed("Verses-1.0")
 
