@@ -71,8 +71,8 @@ def embed(namespace):
                    )
     batch_size = 5000 
     batches = [documents[i:i+batch_size] for i in range(0, len(documents), batch_size)]
-    for batch in batches:
-        print("batch")
+    for i, batch in enumerate(batches, start=1):
+        print(f"batch {i}")
         vectorstore.add_documents(batch)
 
 documents = []

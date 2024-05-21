@@ -48,7 +48,7 @@ def lambda_handler(event, context):
         k = body.get('k', 10)  # Default value for k
         index_name = 'content'  # Don't allow caller to change this
         
-        namespace = body.get('namespace-noop', 'Scriptures-1.0')  # Default value for namespace
+        namespace = body.get('namespace-noop', 'Chapters-1.0')  # Default value for namespace
         
         kwargs = {'namespace':namespace,'include_metadata':True}
     
@@ -63,7 +63,8 @@ def lambda_handler(event, context):
         res = index.query(vector=embedding,top_k=k,**kwargs)
         result_data = [ { 'score': match.score, 'metadata': match.metadata } for match in res.matches ]
         for row in result_data:
-            wrap(f"""{bold(row['metadata']['reference'])} {row['metadata']['text']}\n\n\n""")
+            print(f"""{bold(row['metadata']['reference'])} {row['metadata']['text']}\n\n\n""")
+   #         wrap(f"""{bold(row['metadata']['reference'])} {row['metadata']['text']}\n\n\n""")
 
     except Exception as e:
         print(f"Error in lambda_handler: {e}")

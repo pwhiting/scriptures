@@ -43,7 +43,7 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "null_resource" "create_layer_zip2" {
+resource "null_resource" "create_layer_zip" {
   provisioner "local-exec" {
     command = <<EOT
         mkdir -p layer/python
@@ -58,7 +58,7 @@ resource "null_resource" "create_layer_zip2" {
 }
 
 
-resource "null_resource" "create_layer_zip" {
+resource "null_resource" "create_layer_zip-alternate" {
   provisioner "local-exec" {
     command = <<EOT
       echo "Starting layer creation..."
@@ -89,12 +89,12 @@ data "archive_file" "layer" {
 }
 
 resource "aws_lambda_layer_version" "python-library" {
-  filename                  = "${path.module}/python-library.zip"
+#  filename                  = "${path.module}/python-library.zip"
+  filename                  = data.archive_file.layer.output_path 
   layer_name                = "pinecone-openai"
   compatible_runtimes       = ["python3.12"]
   compatible_architectures  = ["x86_64"]
   source_code_hash          = data.archive_file.layer.output_base64sha256
-#  source_code_hash          = filebase64sha256(data.archive_file.layer.output_path)
 }
 
 data "archive_file" "search" {

@@ -38,8 +38,8 @@ def embed(text):
         raise e
 
 def get_namespace(user_text):
-    default_namespace = "Scriptures-1.1"
-    pattern = re.compile(r'^(Scriptures|Chapters|Verses)')
+    default_namespace = "Verses-1.0"
+    pattern = re.compile(r'^(Chapters|Verses)[-\.]')
     return user_text if pattern.match(user_text) else default_namespace
     
 def lambda_handler(event, context):
