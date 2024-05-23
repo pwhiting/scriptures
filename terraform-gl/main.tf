@@ -3,11 +3,11 @@ provider "aws" {
 }
 
 resource "aws_secretsmanager_secret" "search_api_secret" {
-  name = "search-api-secret"
+  name = "gl-search-api-secret"
 }
 
 resource "aws_iam_role" "lambda_exec_role" {
-  name = "lambda_exec_role"
+  name = "gl-lambda_exec_role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -22,7 +22,7 @@ resource "aws_iam_role" "lambda_exec_role" {
   })
 
   inline_policy {
-    name = "secretsmanager_policy"
+    name = "gl-secretsmanager_policy"
     policy = jsonencode({
       Version = "2012-10-17",
       Statement = [
@@ -52,13 +52,12 @@ data "archive_file" "search" {
 
 resource "aws_lambda_function" "search_function" {
   filename         = data.archive_file.search.output_path
-  function_name    = "search_function"
+  function_name    = "gl-search_function"
   role             = aws_iam_role.lambda_exec_role.arn
   handler          = "search.lambda_handler"
   runtime          = "python3.12"
   timeout          = 30
-  layers           = ["arn:aws:lambda:us-east-1:534284445277:layer:openai-pinecone:1",
-                      "arn:aws:lambda:us-east-1:534284445277:layer:aioboto:1"]
+  layers           = ["arn:aws:lambda:us-east-1:534284445277:layer:openai-pinecone:1"]
   architectures    = ["x86_64"]
   source_code_hash = filebase64sha256(data.archive_file.search.output_path)
   environment {
@@ -77,7 +76,7 @@ resource "aws_lambda_permission" "api_gateway" {
 }
 
 resource "aws_api_gateway_rest_api" "api" {
-  name        = "search-api"
+  name        = "gl-search-api"
   description = "API for search functionality"
 }
 
@@ -107,17 +106,16 @@ resource "aws_api_gateway_integration" "lambda" {
 resource "aws_api_gateway_deployment" "deployment" {
   depends_on = [aws_api_gateway_integration.lambda]
   rest_api_id = aws_api_gateway_rest_api.api.id
-  stage_name  = "prod"
+  stage_name  = "dev"
 }
 
 resource "aws_api_gateway_api_key" "api_key" {
-  name    = "search-api-key"
+  name    = "gl-search-api-key"
   enabled = true
 }
 
 resource "aws_api_gateway_usage_plan" "usage_plan" {
-  name = "search-api-usage-plan"
-
+  name = "gl-search-api-usage-plan"
   api_stages {
     api_id = aws_api_gateway_rest_api.api.id
     stage  = aws_api_gateway_deployment.deployment.stage_name
@@ -130,14 +128,9 @@ resource "aws_api_gateway_usage_plan_key" "usage_plan_key" {
   usage_plan_id = aws_api_gateway_usage_plan.usage_plan.id
 }
 
-output "api_arn" {
-  value = "${aws_api_gateway_rest_api.api.execution_arn}/prod/search"
-}
-
 output "api_url" {
   value = aws_api_gateway_deployment.deployment.invoke_url
 }
-
 
 output "api_key" {
   sensitive = true

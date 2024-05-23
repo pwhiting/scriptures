@@ -1,0 +1,102 @@
+#!/usr/local/bin/python3
+import sys
+import os
+import json
+from langchain_pinecone import PineconeVectorStore
+from langchain_openai import OpenAIEmbeddings
+from langchain.schema import Document
+import sqlite3
+import re
+from bs4 import BeautifulSoup
+
+def extract_book_uri(path):
+    match = re.match(r"^(/scriptures/[^\/]+)/.*$", path)
+    return match.group(1) if match else ""
+
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+if 'OPENAI_API_KEY' not in os.environ and 'OPEN_AI_KEY' in os.environ:
+ os.environ['OPENAI_API_KEY'] = os.environ['OPEN_AI_KEY']
+
+def clean_verse(soup):
+    for sup in soup.find_all('sup'):
+        sup.decompose()
+    for verse_number in soup.find_all(class_='verse-number'):
+        verse_number.decompose()
+    return soup.get_text()
+
+def addChapter(meta,row):
+    if not row['verse_number']:
+        return
+    html = row['content_html'].encode('utf-8')
+    snip = html[row['start_index']:row['end_index']].decode('utf-8', errors='ignore')
+    soup = BeautifulSoup(snip,'html.parser')
+    verse = clean_verse(soup)
+    uri = f"{row['uri']}.{row['verse_number']}"
+    ref = f"{row['title']}:{row['verse_number']}"
+    metadata = {'subitemId': row['id'],
+                'title': row["title"],
+                'subtitle': meta['title'],
+                'subitemVersion': row['version'],
+                'itemId': meta["item_id"],
+                'itemVersion': meta["itemPackageVersion"],
+                'book_uri': extract_book_uri(row['uri']),
+                'uri': uri,
+                'offsets': [f"{row['start_index']}:{row['end_index']-row['start_index']}"],
+                'reference': ref
+                }
+    print(json.dumps(metadata,indent=1))
+    documents.append(Document(page_content = verse, metadata = metadata))
+    return
+
+
+def processDB(db_file):
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+    cursor.execute("SELECT key, value FROM metadata")
+    rows = cursor.fetchall() 
+    meta = {row[0]: row[1] for row in rows}
+     
+
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+SELECT 
+    s.uri, 
+    s.title,
+    pm.verse_number,
+    c.content_html, 
+    s.id, 
+    s.version, 
+    pm.start_index, 
+    pm.end_index
+FROM subitem s
+JOIN subitem_content c ON s.id = c.subitem_id
+JOIN paragraph_metadata pm ON s.id = pm.subitem_id
+""")
+        rows = cursor.fetchall()
+        for row in rows:
+            addChapter(meta,row)
+
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+    finally:
+        conn.close()
+
+def embed(namespace):
+    vectorstore = PineconeVectorStore(
+                    index_name='content', 
+                    embedding=OpenAIEmbeddings(model='text-embedding-3-large'),
+                    namespace = namespace
+                   )
+    batch_size = 5000 
+    batches = [documents[i:i+batch_size] for i in range(0, len(documents), batch_size)]
+    for i, batch in enumerate(batches, start=1):
+        print(f"batch {i}")
+        vectorstore.add_documents(batch)
+
+documents = []
+if __name__ == "__main__":
+ processDB(sys.argv[1])
+ embed("GL-1.3")
+
